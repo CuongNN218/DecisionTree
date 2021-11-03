@@ -2,35 +2,39 @@ import pandas as pd
 import numpy as np
 import argparse
 
+
 def file2csv(file_name):
     data = []
     keys = ['age', 'type_employer', 'fnlwgt', 'education', 'education_num', 'marital',
-            'occupation', 'relationship', 'race', 'sex', ' capital_gain', 'capital_loss',
+            'occupation', 'relationship', 'race', 'sex', 'capital_gain', 'capital_loss',
             'hr_per_week', 'country', 'income']
     with open(file_name) as f:
         for line in f:
             attributes = line.strip().split(',')
             data_point = {}
             for idx, attribute in enumerate(attributes):
-                data_point[keys[idx]] = np.nan if len(attribute.strip()) == 0 else attribute.strip()
+                data_point[keys[idx]] = np.nan if attribute.strip() == '?' else attribute.strip()
             data.append(data_point)
 
     df = pd.DataFrame(data)
-    # write to csv
+    integer_attributes = ['age', 'hr_per_week', 'capital_gain', 'capital_loss']
+    df[integer_attributes] = df[integer_attributes].astype(int)
+
     return df
 
-def preprocessing(dataframe, datareadyfile):
+
+def preprocessing(dataframe, data_ready_file):
     # to do
     # remove number with missing value
-    dataframe.dropna(inplace=True)
+    dataframe = dataframe.dropna(inplace=True)
     # remove attributes fnlwgt, education-num, relationship drop col
-    filtered_df = dataframe(['fnlwgt', 'education-num', 'relationship'], axis=1)
+    filtered_df = dataframe.drop(['fnlwgt', 'education_num', 'relationship'], axis=1)
     # binarize the following attributes:
-    filtered_df[filtered_df['capital-gain'] > 0]['capital-gain'] = 'yes'  # yes > 0, no = 0
-    filtered_df[filtered_df['capital-gain'] == 0]['capital-gain'] = 'no'
-    filtered_df[filtered_df['capital-loss'] > 0]['capital-loss'] = 'yes'  # yes > 0, no = 0
-    filtered_df[filtered_df['capital-loss'] == 0]['capital-loss'] = 'no'
-    filtered_df[filtered_df['country'] != 'United-States']['country'] = 'other'  # United-States, other
+    filtered_df.loc[filtered_df['capital_gain'] > 0, 'capital_gain'] = 'yes'  # yes > 0, no = 0
+    filtered_df.loc[filtered_df['capital_gain'] == 0, 'capital_gain'] = 'no'
+    filtered_df.loc[filtered_df['capital_loss'] > 0, 'capital_loss'] = 'yes'  # yes > 0, no = 0
+    filtered_df.loc[filtered_df['capital_loss'] == 0, 'capital_loss'] = 'no'
+    filtered_df.loc[filtered_df['country'] != 'United-States', 'country'] = 'other'  # United-States, other
     # discretize continuous attributes:
     category_age = ['young', 'adult', 'senior', 'old']
     filtered_df['age'] = pd.cut(x=filtered_df['age'],
@@ -38,7 +42,7 @@ def preprocessing(dataframe, datareadyfile):
                                 labels=category_age)
     category_hour = ['part-time', 'full-time', 'over-time']
     filtered_df['hr_per_week'] = pd.cut(x=filtered_df['hr_per_week'],
-                                        bins=[0, 39, 40],
+                                        bins=[0, 39, 40, 168],
                                         labels=category_hour)
     # merge attribute values together/reassign attribute values
     # work_class
@@ -66,21 +70,22 @@ def preprocessing(dataframe, datareadyfile):
     filtered_df['education'] = filtered_df['education'].replace(['Prof-school',
                                                                  'Assoc-acdm',
                                                                  'Assoc-voc',
-                                                                 'Some-college'])
-    filtered_df['education'] = filtered_df['education'].replace(['Masters,'
+                                                                 'Some-college'],
+                                                                'AfterHS')
+    filtered_df['education'] = filtered_df['education'].replace(['Masters',
                                                                  'Doctorate'],
                                                                 'Grd')
     # martial status
-    filtered_df['martial'] = filtered_df['martial'].replace(['Married-AF-spouse',
+    filtered_df['marital'] = filtered_df['marital'].replace(['Married-AF-spouse',
                                                              'Married-civ-spouse'],
                                                             'Married')
 
-    filtered_df['martial'] = filtered_df['martial'].replace(['Married-spouse-absent',
+    filtered_df['marital'] = filtered_df['marital'].replace(['Married-spouse-absent',
                                                              'Separated',
                                                              'Divorced',
                                                              'Widowed'],
                                                             'Not-married')
-
+    # occupation
     filtered_df['occupation'] = filtered_df['occupation'].replace(['Tech-support',
                                                                    'Adm-clerical',
                                                                    'Priv-house-serv',
@@ -89,13 +94,15 @@ def preprocessing(dataframe, datareadyfile):
                                                                    'Other-service'],
                                                                   'Other')
 
-    filtered_df['occupation'] = filtered_df['occupation'].replace(['Craft-repair', 'Farming-fishing',
+    filtered_df['occupation'] = filtered_df['occupation'].replace(['Craft-repair',
+                                                                   'Farming-fishing',
                                                                    'Handlers-cleaners',
                                                                    'Machine-op-inspct',
                                                                    'Transport-moving'],
                                                                   'ManualWork')
 
-    filtered_df.to_csv(datareadyfile, index=False)
+    filtered_df.to_csv(data_ready_file, index=False)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -103,5 +110,5 @@ if __name__ == "__main__":
     parser.add_argument('--output_file', type=str, default="train.csv.", help="Name of csv output file")
     args = parser.parse_args()
 
-    df = file2csv(args.input_file)
-    preprocessing(df, args.output_file)
+    df_adult = file2csv(args.input_file)
+    preprocessing(df_adult, args.output_file)
