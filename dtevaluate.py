@@ -15,7 +15,9 @@ def counter(predictions):
     tp, tn, fp, fn = 0, 0, 0, 0
     with open(predictions) as f:
         for line in f:
-            pred, gt = line.strip().split()
+            gt, pred = line.strip().split()
+            gt = int(gt)
+            pred = int(pred)
             if pred == 1:
                 pos += 1
             else:
@@ -33,11 +35,11 @@ def counter(predictions):
                 pos += 1
                 false += 0
             elif int(pred) == 0 and int(gt) == 0:
-                fn += 1
+                tn += 1
                 neg += 1
                 false += 1
             else:
-                tn += 1
+                fn += 1
                 true += 1
                 neg += 1
             N += 1
@@ -46,12 +48,14 @@ def counter(predictions):
 
 
 def cal_metric(tp, tn, fp, fn):
-    err = 0
-    acc = 0
-    recall = 0
-    precision = 0
-    f1 = 0
-    return err, acc, recall, f1
+    epsilon = 1e-7  # avoid divide by 0
+    error_rate = (fn + fp) / (tp + tn + fp + fn + epsilon)
+    accuracy = (tn + tp) / (tp + tn + fp + fn + epsilon)
+    recall = tp / (tp + fn + epsilon)
+    precision = tp / (tp + fp + epsilon)
+    f1_score = (2 * precision * recall) / (precision + recall + epsilon)
+    return error_rate, accuracy, recall, f1_score
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -63,7 +67,7 @@ if __name__ == "__main__":
     print("Accuracty: ", acc)
     print("Recall: ", recall)
     print("F1-score: ", f1)
-    val = np.array([[tp, tn], [fp,fn]])
-    classes = ['class A', 'class B']
+    val = np.array([[tp, fn], [fp, tn]])
+    classes = ['>50K', '<=50K']
     title = "title example"
     plot_matrix(val, classes, title)
