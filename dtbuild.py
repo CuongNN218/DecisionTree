@@ -16,7 +16,6 @@ class TreeNode(object):
     def set_properties(self, split_attribute, order):
         self.split_attribute = split_attribute
         self.order = order
-
     def set_label(self, label):
         self.label = label
 
