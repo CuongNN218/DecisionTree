@@ -1,50 +1,38 @@
 import numpy as np
 import argparse
+import pandas as pd
+import matplotlib.pyplot as plt
 import seaborn as sns; sns.set_theme()
+
 sns.set(font_scale=2)
 
 
 def plot_matrix(cm, classes, title):
-    ax = sns.heatmap(cm, cmap="Blues", annot=True, xticklabels=classes, yticklabels=classes, cbar=False)
-    ax.set(title=title, xlabel="predicted label", ylabel="true label")
+    fig = sns.heatmap(cm, cmap="Blues", annot=True, xticklabels=classes, yticklabels=classes, cbar=False, fmt='g')
+    fig.set(title=title, xlabel="predicted label", ylabel="true label")
+    fig = fig.get_figure()
+    fig.savefig('confusion_matrix.png')
+    plt.show()
 
 
-def counter(predictions):
-    N = 0
-    pos, neg, true, false = 0, 0, 0, 0
-    tp, tn, fp, fn = 0, 0, 0, 0
-    with open(predictions) as f:
-        for line in f:
-            gt, pred = line.strip().split()
-            gt = int(gt)
-            pred = int(pred)
-            if pred == 1:
-                pos += 1
-            else:
-                neg += 1
-            if gt == 1:
-                true += 1
-            else:
-                false += 1
-            if int(pred) == 1 and int(gt) == 1:
-                tp += 1
-                pos += 1
-                true += 1
-            elif int(pred) == 1 and int(gt) == 0:
-                fp += 1
-                pos += 1
-                false += 0
-            elif int(pred) == 0 and int(gt) == 0:
-                tn += 1
-                neg += 1
-                false += 1
-            else:
-                fn += 1
-                true += 1
-                neg += 1
-            N += 1
 
-    return pos, neg, true, false, N, tp, tn, fp, fn
+def counting_label(df, name):
+    counting = df[name].value_counts().to_dict()
+    return counting['1'], counting['0']
+
+
+def counter(test_data):
+    p_positive, p_negative = counting_label(test_data, 'Prediction')
+
+    n_pos = test_data.loc[test_data['True'] == test_data['Prediction']].shape[0]
+    n_sample = test_data.shape[0]
+    n_neg = n_sample - n_pos
+
+    true_pos = test_data.loc[(test_data['True'] == '1') & (test_data['Prediction'] == '1')].shape[0]
+    true_neg = test_data.loc[(test_data['True'] == '0') & (test_data['Prediction'] == '0')].shape[0]
+    false_pos = test_data.loc[(test_data['True'] == '0') & (test_data['Prediction'] == '1')].shape[0]
+    false_neg = n_sample - (true_pos + true_neg + false_pos)
+    return p_positive, p_negative, n_pos, n_neg, n_sample, true_pos, true_neg, false_pos, false_neg
 
 
 def cal_metric(tp, tn, fp, fn):
@@ -61,7 +49,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--pred', type=str, help="Name to prediction file")
     args = parser.parse_args()
-    pos, neg, true, false, N, tp, tn, fp, fn = counter(args.pred)
+
+    pred_data = pd.read_csv(args.pred)
+    pred_data['True'] = pred_data['True'].replace(['<=50K', '>50K'], ['0', '1'])
+    pred_data['Prediction'] = pred_data['Prediction'].replace(['<=50K', '>50K'], ['0', '1'])
+
+    pos, neg, true, false, N, tp, tn, fp, fn = counter(pred_data)
+
     err, acc, recall, f1 = cal_metric(tp, tn, fp, fn)
     print("Error Rate: ", err)
     print("Accuracty: ", acc)
@@ -69,5 +63,5 @@ if __name__ == "__main__":
     print("F1-score: ", f1)
     val = np.array([[tp, fn], [fp, tn]])
     classes = ['>50K', '<=50K']
-    title = "title example"
+    title = "Confusion Matrix"
     plot_matrix(val, classes, title)

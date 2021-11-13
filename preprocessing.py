@@ -25,8 +25,10 @@ def file2csv(file_name):
 
 def preprocessing(dataframe, data_ready_file):
     # to do
+    # print(dataframe.shape)
     # remove number with missing value
-    dataframe = dataframe.dropna(inplace=True)
+    dataframe = dataframe.dropna(inplace=False)
+    # print(dataframe.shape)
     # remove attributes fnlwgt, education-num, relationship drop col
     filtered_df = dataframe.drop(['fnlwgt', 'education_num', 'relationship'], axis=1)
     # binarize the following attributes:
@@ -107,7 +109,7 @@ def preprocessing(dataframe, data_ready_file):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_file', type=str, help="Name to input file")
-    parser.add_argument('--output_file', type=str, default="train.csv.", help="Name of csv output file")
+    parser.add_argument('--output_file', type=str, default="train.csv", help="Name of csv output file")
     args = parser.parse_args()
 
     df_adult = file2csv(args.input_file)
