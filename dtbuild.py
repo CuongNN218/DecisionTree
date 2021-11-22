@@ -4,6 +4,11 @@ from itertools import combinations
 import csv
 import argparse
 
+def mapper(df, mapper_dict):
+    df = df.replace(mapper_dict)
+    return df
+
+
 # class tree node for create a new node in tree
 class Node(object):
     def __init__(self):
@@ -37,7 +42,7 @@ class BinaryDT(object):
             new_split_list = [mapper[item] for item in split_list]
 
         elif attribute == 'education':
-
+            print(split_list)
             mapper = {"0": 'BeforeHS', "1": 'HS-grad', "2": 'AfterHS', "3": 'Bachelors', "4": 'Grd'}
             new_split_list = [mapper[item] for item in split_list]
 
@@ -105,9 +110,6 @@ class BinaryDT(object):
             print("Doesn't have any attributes left.")
             return True
         # case 2: node is pure
-        elif self.numNode in [1, 2]:
-            print("STOP")
-            return True
         elif count_0 == 0 or count_1 == 0:
             print("Pure node.")
             return True
@@ -317,6 +319,19 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     train_data = pd.read_csv(args.train_file)
-    tree = BinaryDT(min_sup=args.min_sup, data_train=train_data)
+    # print(train_data.shape)
+    # convert label 2 binary
+    train_data['income'] = train_data['income'].replace(['<=50K', '>50K'], ['0', '1'])
+    # convert ordinal attribute to int
+    mapper_age = {'young': "0", 'adult': "1", 'senior': "2", 'old': "3"}
+    train_data = mapper(train_data, mapper_age)
+    mapper_edu = {'BeforeHS': "0", 'HS-grad': "1" , 'AfterHS': "2", 'Bachelors': "3", 'Grd': "4"}
+    train_data = mapper(train_data, mapper_edu)
+    mapper_hr = {'part-time': "0", 'full-time': "1", 'over-time': "2"}
+    train_data = mapper(train_data, mapper_hr)
+    # build tree
+    tree = BinaryDT(min_sup=args.min_freq, data_train=train_data)
     attribute_type_list = [1, 2, 1, 2, 2, 2, 0, 0, 0, 1, 0]
     root = tree.tree_grow(train_data, list(train_data), attribute_type_list, None)
+    # save model
+    tree.save_model(root, args.model_file)

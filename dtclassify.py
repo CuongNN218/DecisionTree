@@ -47,8 +47,8 @@ def create_node(elements):
         return node
 
     else:
-
-        node_id, parent_id, splitting_att, left_att_val, left_id, right_att_val, right_id = elements
+        # print(elements)
+        node_id, parent_id, splitting_att, left_att_val, left_id, right_att_val, right_id, _ = elements
         node = Node()
         node.id = int(node_id[1:])
         node.parent_id = int(parent_id[1:]) if parent_id != 'NULL' else None
@@ -64,7 +64,7 @@ def create_node(elements):
 
 def load_model(model_path):
     root = None
-    with open('model.txt', 'r') as f:
+    with open(model_path, 'r') as f:
         count = 0
         for line in f:
             elements = line.strip().split(':')
