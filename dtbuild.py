@@ -22,8 +22,8 @@ class Node(object):
         self.g_right = []  # group of elements for right child
         self.label = -1  # label of the node 0: neg, 1: pos, -1: non-determine
         self.used_atts = None
-        self.n_pos = 0  # number of positive labels for left child
-        self.n_neg = 0  # number of negative labels for right child
+        # self.n_pos = 0  # number of positive labels for left child
+        # self.n_neg = 0  # number of negative labels for right child
 
 
 class BinaryDT(object):
